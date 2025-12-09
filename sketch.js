@@ -36,7 +36,7 @@ function draw() {
   textSize(16);
   textAlign(CENTER);
   
-  // TUS 3 CLASES - Cambia los nombres según los pusiste en Teachable Machine
+  
   if (label === "iphone") {
     texto = "📱 Un iPhone!";
   } else if (label === "Termo") {
@@ -55,14 +55,14 @@ function draw() {
   text(texto + " " + confianza, width / 2, height - 4);
 }
 
-// Get a prediction for the current video frame
+
 function classifyVideo() {
   flippedVideo = ml5.flipImage(video);
   classifier.classify(flippedVideo, gotResult);
   flippedVideo.remove();
 }
 
-// When we get a result
+
 function gotResult(error, results) {
   // If there is an error
   if (error) {
