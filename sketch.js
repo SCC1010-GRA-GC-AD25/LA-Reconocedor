@@ -1,135 +1,77 @@
 // Classifier Variable
 let classifier;
-// IMPORTANTE: Cambia esto al nombre de tu carpeta del modelo
+// Model URL
 let imageModelURL = './my_model/';
-
+let confianza = 0;
+let texto = "";
 // Video
 let video;
 let flippedVideo;
-// Para guardar la clasificación
+// To store the classification
 let label = "";
-let confianza = 0;
-let modelLoaded = false;
-let videoReady = false;
 
+// Load the model first
 function preload() {
-  console.log("🔄 Cargando modelo desde:", imageModelURL);
-  classifier = ml5.imageClassifier(imageModelURL + 'model.json', modelReady, modelError);
-}
-
-function modelReady() {
-  console.log("✅ ¡MODELO CARGADO CORRECTAMENTE!");
-  modelLoaded = true;
-  if (videoReady) {
-    classifyVideo();
-  }
-}
-
-function modelError(error) {
-  console.error("❌ ERROR AL CARGAR MODELO:", error);
+  classifier = ml5.imageClassifier(imageModelURL + 'model.json');
 }
 
 function setup() {
-  createCanvas(windowWidth, windowHeight);
-  console.log("✅ Canvas creado");
-
-  video = createCapture(VIDEO, camReady);
+  createCanvas(320, 260);
+  // Create the video
+  video = createCapture(VIDEO);
   video.size(320, 240);
   video.hide();
-}
-
-function camReady() {
-  console.log("✅ ¡CÁMARA LISTA!");
-  videoReady = true;
-  if (modelLoaded) {
-    flippedVideo = ml5.flipImage(video);
-    classifyVideo();
-  }
+  flippedVideo = ml5.flipImage(video);
+  // Start classifying
+  classifyVideo();
 }
 
 function draw() {
   background(0);
-
-  if (!videoReady || !modelLoaded) {
-    fill(255);
-    textSize(20);
-    textAlign(CENTER, CENTER);
-    text("Cargando...", width / 2, height / 2 - 40);
-    
-    if (!videoReady) {
-      fill(255, 200, 0);
-      text("⏳ Esperando cámara", width / 2, height / 2);
-    }
-    if (!modelLoaded) {
-      fill(255, 200, 0);
-      text("⏳ Cargando modelo", width / 2, height / 2 + 40);
-    }
-    return;
-  }
-
-  // Dibujar video en la esquina superior izquierda con efecto espejo
-  push();
-  translate(320, 0);
-  scale(-1, 1);
-  image(video, 0, 0, 320, 240);
-  pop();
-
-  // Caja negra para el texto
-  fill(0);
-  rect(0, 240, 320, 60);
+  // Draw the video
+  image(flippedVideo, 0, 0);
   
-  // Mostrar predicción
+  // Draw the label
   fill(255);
   textSize(16);
   textAlign(CENTER);
-
-  let mostrar = "";
-
- 
+  
+  // TUS 3 CLASES - Cambia los nombres según los pusiste en Teachable Machine
   if (label === "iphone") {
-    mostrar = "📱 Un iPhone!";
+    texto = "📱 Un iPhone!";
   } else if (label === "Termo") {
-    mostrar = "🫗 Un termo!";
+    texto = "🫗 Un termo!";
   } else if (label === "Sabritas") {
-    mostrar = "🍟 Unas Sabritas!";
+    texto = "🍟 Unas Sabritas!";
   } else {
-    mostrar = "❓ No sé qué es";
-  }
-
-  if (confianza < 0.70) {
-    mostrar = "❓ No sé qué es";
-  }
-
-  text(mostrar, 160, 260);
-  textSize(14);
-  text(`Confianza: ${confianza}`, 160, 280);
-}
-
-function classifyVideo() {
-  if (!videoReady || !modelLoaded) {
-    return;
+    texto = "❓ No lo reconozco";
   }
   
+  // Si la confianza es baja, mostrar que no reconoce
+  if (confianza < 0.7) {
+    texto = "❓ No lo reconozco";
+  }
+  
+  text(texto + " " + confianza, width / 2, height - 4);
+}
+
+// Get a prediction for the current video frame
+function classifyVideo() {
   flippedVideo = ml5.flipImage(video);
   classifier.classify(flippedVideo, gotResult);
   flippedVideo.remove();
 }
 
+// When we get a result
 function gotResult(error, results) {
+  // If there is an error
   if (error) {
-    console.error("❌ Error en clasificación:", error);
+    console.error(error);
     return;
   }
-
-  if (results && results[0]) {
-    label = results[0].label;
-    confianza = results[0].confidence.toFixed(2);
-    console.log("Detectado:", label, "- Confianza:", confianza);
-  }
-
+  // The results are in an array ordered by confidence.
+  label = results[0].label;
+  confianza = results[0].confidence.toFixed(2);
+  // Classify again!
   classifyVideo();
-}
-
-function windowResized() {
-  resizeCanvas(windowWidth, windowHeight);
 }
